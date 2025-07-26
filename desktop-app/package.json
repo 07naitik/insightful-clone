@@ -1,0 +1,87 @@
+{
+  "name": "insightful-time-tracker",
+  "version": "1.0.0",
+  "description": "Insightful-compatible time tracking desktop application",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
+    "electron:pack": "electron-builder --dir",
+    "electron:dist": "npm run build && electron-builder",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder --win",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "keywords": [
+    "time-tracking",
+    "electron",
+    "react",
+    "typescript",
+    "screenshots",
+    "productivity"
+  ],
+  "author": "Insightful Clone Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.25",
+    "@types/react-dom": "^18.2.11",
+    "@typescript-eslint/eslint-plugin": "^6.7.5",
+    "@typescript-eslint/parser": "^6.7.5",
+    "@vitejs/plugin-react": "^4.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.6.4",
+    "eslint": "^8.51.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.11",
+    "vite-plugin-electron": "^0.15.5",
+    "wait-on": "^7.0.1"
+  },
+  "dependencies": {
+    "@types/keytar": "^4.4.4",
+    "axios": "^1.5.1",
+    "dexie": "^3.2.4",
+    "keytar": "^7.9.0",
+    "macaddress": "^0.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "screenshot-desktop": "^1.12.7"
+  },
+  "build": {
+    "appId": "com.insightful.timetracker",
+    "productName": "Insightful Time Tracker",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist-electron/",
+      "dist/",
+      "node_modules/",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
+    },
+    "extraResources": [
+      "assets/**"
+    ]
+  }
+}

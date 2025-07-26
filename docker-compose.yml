@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: insightful-api
+    ports:
+      - "8000:8000"
+    environment:
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - SUPABASE_PROJECT_URL=${SUPABASE_PROJECT_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - DEBUG=true
+      - ENVIRONMENT=development
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app:ro
+    restart: unless-stopped
+    networks:
+      - insightful-network
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  insightful-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

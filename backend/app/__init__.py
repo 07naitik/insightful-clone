@@ -1,0 +1,1 @@
+# Insightful Clone API application

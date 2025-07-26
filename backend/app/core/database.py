@@ -10,14 +10,30 @@ from typing import AsyncGenerator
 
 from app.core.config import settings
 
-# Create async engine
+# Create async engine with aggressive pgbouncer compatibility settings
 engine = create_async_engine(
     settings.SUPABASE_DB_URL,
     echo=settings.DEBUG,
     pool_pre_ping=True,
     pool_recycle=300,
-    # Configure asyncpg for pgbouncer compatibility
-    connect_args={"statement_cache_size": 0},
+    pool_reset_on_return="commit",
+    pool_size=1,
+    max_overflow=0,
+    # Aggressive asyncpg configuration for pgbouncer compatibility
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+        "server_settings": {
+            "jit": "off",
+            "plan_cache_mode": "force_generic_plan",
+        },
+        "command_timeout": 60,
+    },
+    # Force execution options to avoid prepared statements
+    execution_options={
+        "isolation_level": "AUTOCOMMIT",
+        "compiled_cache": {},
+    }
 )
 
 # Create async session factory

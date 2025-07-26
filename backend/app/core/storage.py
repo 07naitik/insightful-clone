@@ -57,21 +57,37 @@ class StorageManager:
             unique_id = str(uuid.uuid4())[:8]
             file_name = f"employee_{employee_id}/time_entry_{time_entry_id}/{timestamp}_{unique_id}.png"
             
+            # Read BytesIO content to raw bytes
+            file_data.seek(0)  # Reset position to beginning
+            file_content = file_data.read()
+            
             # Upload file
             response = self.supabase.storage.from_(self.bucket_name).upload(
                 file_name,
-                file_data,
+                file_content,  # Use raw bytes instead of BytesIO
                 file_options={
                     "content-type": content_type,
                     "cache-control": "3600"
                 }
             )
             
-            if response.get('error'):
+            # Handle Supabase Response object properly
+            if hasattr(response, 'error') and response.error:
+                raise ServerError(f"Upload failed: {response.error}")
+            elif hasattr(response, 'get') and response.get('error'):
                 raise ServerError(f"Upload failed: {response['error']}")
+            elif not response:
+                raise ServerError("Upload failed: No response from storage")
             
-            # Get public URL
-            file_url = self.supabase.storage.from_(self.bucket_name).get_public_url(file_name)
+            # Get public URL - handle Response object properly
+            url_response = self.supabase.storage.from_(self.bucket_name).get_public_url(file_name)
+            if hasattr(url_response, 'url'):
+                file_url = url_response.url
+            elif isinstance(url_response, str):
+                file_url = url_response
+            else:
+                # Extract URL from response dict/object
+                file_url = getattr(url_response, 'url', str(url_response))
             
             logger.info(f"Screenshot uploaded: {file_name}")
             return file_url, file_name

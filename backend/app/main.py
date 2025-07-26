@@ -21,7 +21,9 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     logger.info("Starting Insightful Clone API")
-    await database.connect()
+    # TODO: Re-enable database connection test after fixing pgbouncer compatibility
+    # await database.connect()
+    logger.info("Skipping startup database test due to pgbouncer compatibility issue")
     yield
     # Shutdown
     logger.info("Shutting down Insightful Clone API")

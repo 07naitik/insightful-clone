@@ -10,39 +10,43 @@ from typing import AsyncGenerator
 
 from app.core.config import settings
 
-# Create async engine with complete prepared statement disabling for pgbouncer
+# Create async engine with extreme prepared statement disabling for pgbouncer compatibility
 engine = create_async_engine(
     settings.SUPABASE_DB_URL,
     echo=settings.DEBUG,
-    pool_pre_ping=True,
-    pool_recycle=300,
-    pool_reset_on_return="commit",
-    pool_size=1,
-    max_overflow=0,
-    # Complete asyncpg configuration to disable all prepared statements
+    pool_pre_ping=False,  # Disable pre-ping to avoid prepared statements
+    pool_recycle=60,  # Shorter recycle time
+    pool_reset_on_return="rollback",  # Force rollback on return
+    pool_size=1,  # Single connection to avoid statement conflicts
+    max_overflow=0,  # No overflow connections
+    # Extreme asyncpg configuration to disable ALL prepared statements
     connect_args={
         "statement_cache_size": 0,
         "prepared_statement_cache_size": 0,
+        "prepared_statement_name_func": None,  # Disable named prepared statements
         "server_settings": {
             "jit": "off",
             "plan_cache_mode": "force_generic_plan",
+            "default_transaction_isolation": "read_committed",
         },
-        "command_timeout": 60,
+        "command_timeout": 30,
     },
-    # Complete execution options to force unprepared queries
+    # Extreme execution options to force text queries
     execution_options={
-        "isolation_level": "AUTOCOMMIT",
         "compiled_cache": {},
-        "render_postcompile": True,  # Force parameter rendering
-    }
+        "render_postcompile": True,  # Force all parameters to be rendered as literals
+        "schema_translate_map": None,
+    },
+    # Additional SQLAlchemy engine options
+    future=True,  # Use future-style engine
 )
 
-# Create async session factory
+# Create async session factory with strict isolation
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
-    autoflush=True,
+    autoflush=False,  # Disable autoflush to prevent unexpected queries
     autocommit=False,
 )
 

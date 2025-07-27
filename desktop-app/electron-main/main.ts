@@ -28,13 +28,22 @@ class MainProcess {
       minWidth: 800,
       minHeight: 600,
       show: false, // Don't show until ready-to-show
+      titleBarStyle: 'default', // Use default titlebar
+      frame: true, // Keep window frame
+      transparent: false,
+      resizable: true,
+      maximizable: true,
+      minimizable: true,
+      closable: true,
+      title: 'Insightful Time Tracker',
       icon: join(__dirname, '../public/icon.png'),
       webPreferences: {
         nodeIntegration: false, // Security: disable node integration
         contextIsolation: true, // Security: enable context isolation
-        enableRemoteModule: false, // Security: disable remote module
         preload: join(__dirname, 'preload.js'), // Load preload script
-        webSecurity: true
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false
       }
     })
 

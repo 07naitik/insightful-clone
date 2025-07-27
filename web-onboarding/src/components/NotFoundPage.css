@@ -1,0 +1,266 @@
+/* NotFoundPage.css - 404 error page styles */
+
+.not-found-page {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.not-found-container {
+  max-width: 600px;
+  width: 100%;
+}
+
+.not-found-content {
+  background: white;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.not-found-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.error-code {
+  font-size: 8rem;
+  font-weight: 900;
+  color: #ef4444;
+  margin-bottom: 1rem;
+  line-height: 1;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.error-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.error-description {
+  font-size: 1.25rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.home-button,
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.home-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.home-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  text-decoration: none;
+  color: white;
+}
+
+.back-button {
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.back-button:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.help-section {
+  text-align: left;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.help-section h3 {
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.help-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.help-links li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-links li::before {
+  content: '→';
+  color: #667eea;
+  font-weight: bold;
+}
+
+.help-links a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.help-links a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+.common-issues {
+  text-align: left;
+  padding: 1.5rem;
+  background: #fef3c7;
+  border-radius: 12px;
+  border: 1px solid #fcd34d;
+}
+
+.common-issues h4 {
+  color: #92400e;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.common-issues h4::before {
+  content: '💡';
+  font-size: 1.25rem;
+}
+
+.common-issues ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.common-issues li {
+  color: #92400e;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.common-issues li::before {
+  content: '•';
+  color: #f59e0b;
+  font-weight: bold;
+  margin-top: 0.125rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .not-found-page {
+    padding: 1rem;
+    min-height: 50vh;
+  }
+
+  .not-found-content {
+    padding: 2rem 1rem;
+  }
+
+  .error-code {
+    font-size: 6rem;
+  }
+
+  .error-title {
+    font-size: 2rem;
+  }
+
+  .error-description {
+    font-size: 1.125rem;
+  }
+
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .home-button,
+  .back-button {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .help-section {
+    padding: 1rem;
+  }
+
+  .common-issues {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .error-code {
+    font-size: 4rem;
+  }
+
+  .error-title {
+    font-size: 1.75rem;
+  }
+
+  .error-description {
+    font-size: 1rem;
+  }
+
+  .help-links {
+    font-size: 0.875rem;
+  }
+
+  .common-issues {
+    font-size: 0.875rem;
+  }
+}

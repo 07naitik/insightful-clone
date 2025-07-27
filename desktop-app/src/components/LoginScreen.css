@@ -26,17 +26,19 @@
   margin-bottom: 32px;
 }
 
-.login-title {
-  color: #333;
+.login-header h2 {
+  color: #1f2937;
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 8px;
+  margin-top: 0;
 }
 
-.login-subtitle {
-  color: #666;
+.login-header p {
+  color: #4b5563;
   font-size: 16px;
   margin: 0;
+  font-weight: 500;
 }
 
 .login-form {
@@ -51,31 +53,37 @@
   gap: 8px;
 }
 
-.form-label {
-  color: #333;
-  font-weight: 500;
+.form-group label {
+  color: #1f2937;
+  font-weight: 600;
   font-size: 14px;
 }
 
-.form-input {
+.form-group input {
   padding: 12px 16px;
-  border: 2px solid #e1e5e9;
+  border: 2px solid #e5e7eb;
   border-radius: 8px;
   font-size: 16px;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
   background: white;
+  color: #1f2937;
 }
 
-.form-input:focus {
+.form-group input::placeholder {
+  color: #9ca3af;
+}
+
+.form-group input:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
-.form-input:disabled {
-  background-color: #f5f5f5;
-  color: #999;
+.form-group input:disabled {
+  background-color: #f9fafb;
+  color: #6b7280;
   cursor: not-allowed;
+  border-color: #d1d5db;
 }
 
 .login-button {
@@ -103,14 +111,15 @@
   box-shadow: none;
 }
 
-.login-error {
-  background-color: #fee;
-  color: #c53030;
+.error-message {
+  background-color: #fef2f2;
+  color: #dc2626;
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid #fed7d7;
+  border: 1px solid #fecaca;
   font-size: 14px;
-  margin-top: 16px;
+  font-weight: 500;
+  text-align: center;
 }
 
 .login-loading {
@@ -120,28 +129,16 @@
   margin-top: 16px;
 }
 
-/* Demo credentials hint */
-.demo-hint {
+.login-footer {
   margin-top: 24px;
-  padding: 16px;
-  background-color: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
+  text-align: center;
+}
+
+.login-footer p {
+  color: #6b7280;
   font-size: 14px;
-  color: #0369a1;
-}
-
-.demo-hint h4 {
-  margin: 0 0 8px 0;
-  color: #0c4a6e;
-}
-
-.demo-hint p {
-  margin: 4px 0;
-  font-family: monospace;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 4px 8px;
-  border-radius: 4px;
+  margin: 0;
+  font-weight: 500;
 }
 
 /* Responsive design */

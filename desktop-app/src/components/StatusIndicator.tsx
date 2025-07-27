@@ -45,14 +45,14 @@ const StatusIndicator: React.FC<Props> = ({
   const getStatusIcon = () => {
     switch (status) {
       case 'working':
-        return '▶️'
+        return '🟢'
       case 'paused':
-        return '⏸️'
+        return '🟡'
       case 'offline':
         return '🔴'
       case 'idle':
       default:
-        return '⏹️'
+        return '⚪'
     }
   }
 
@@ -61,10 +61,12 @@ const StatusIndicator: React.FC<Props> = ({
     flexDirection: 'column',
     gap: '0.5rem',
     padding: '1rem',
-    backgroundColor: '#f9fafb',
-    border: '1px solid #e5e7eb',
-    borderRadius: '0.5rem',
-    fontSize: '0.875rem'
+    backgroundColor: '#ffffff',
+    border: '2px solid #e5e7eb',
+    borderRadius: '12px',
+    fontSize: '0.875rem',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    transition: 'all 0.2s ease'
   }
 
   const statusMainStyle: React.CSSProperties = {
@@ -83,14 +85,22 @@ const StatusIndicator: React.FC<Props> = ({
 
   const statusTextStyle: React.CSSProperties = {
     fontWeight: 600,
-    color: '#374151'
+    color: '#374151',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontSize: '0.9em'
   }
 
   const timeElapsedStyle: React.CSSProperties = {
     marginLeft: 'auto',
     fontWeight: 700,
     color: '#1f2937',
-    fontFamily: 'Monaco, Menlo, Ubuntu Mono, monospace'
+    fontFamily: 'Monaco, Menlo, "Ubuntu Mono", Consolas, monospace',
+    fontSize: '1.1em',
+    padding: '0.25rem 0.5rem',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '6px'
   }
 
   const currentTaskStyle: React.CSSProperties = {
@@ -119,7 +129,8 @@ const StatusIndicator: React.FC<Props> = ({
       <div style={statusMainStyle}>
         <div style={statusDotStyle} />
         <span style={statusTextStyle}>
-          {getStatusIcon()} {getStatusText()}
+          <span style={{ fontSize: '1.2em', lineHeight: 1 }}>{getStatusIcon()}</span>
+          <span>{getStatusText()}</span>
         </span>
         {timeElapsed && (
           <span style={timeElapsedStyle}>

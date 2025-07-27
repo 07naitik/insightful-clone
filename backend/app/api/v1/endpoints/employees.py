@@ -18,6 +18,16 @@ from app.core.exceptions import NotFoundError, ConflictError, ValidationError
 router = APIRouter()
 
 
+@router.get("/me", response_model=EmployeeResponse)
+async def get_current_employee_info(
+    current_user: Employee = Depends(get_current_employee)
+):
+    """
+    Get current authenticated employee information
+    """
+    return current_user
+
+
 @router.post("/", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
 async def create_employee(
     employee_data: EmployeeCreate,

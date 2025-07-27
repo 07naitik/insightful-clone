@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useApi } from '../contexts/ApiContext'
 import { useOfflineQueue } from '../contexts/OfflineQueueContext'
 import Timer from './Timer'
-import ProjectTaskSelector from './ProjectTaskSelector'
-import StatusIndicator from './StatusIndicator'
+import ProjectTaskSelector from './ProjectTaskSelector.tsx'
+import StatusIndicator from './StatusIndicator.tsx'
 import './Dashboard.css'
 
 interface Project {
@@ -31,8 +31,8 @@ interface TimeEntry {
 
 const Dashboard: React.FC = () => {
   const { employee, logout } = useAuth()
-  const { getProjects, getTasks, getTimeEntries, createTimeEntry, stopTimeEntry } = useApi()
-  const { isOnline, queueSize, processQueue } = useOfflineQueue()
+  const { getProjects, getTasks, getTimeEntries, createTimeEntry, stopTimeEntry, uploadScreenshot } = useApi()
+  const { addToQueue } = useOfflineQueue()
 
   // State management
   const [projects, setProjects] = useState<Project[]>([])
@@ -47,6 +47,24 @@ const Dashboard: React.FC = () => {
   // Screenshot management
   const [screenshotInterval, setScreenshotInterval] = useState<number>(5) // minutes
   const [isScreenshotScheduled, setIsScreenshotScheduled] = useState(false)
+  
+  // Refs to access current state in screenshot listener (avoid closure issues)
+  const isTrackingRef = useRef(isTracking)
+  const currentTimeEntryRef = useRef(currentTimeEntry)
+  const employeeRef = useRef(employee)
+  
+  // Update refs whenever state changes
+  useEffect(() => {
+    isTrackingRef.current = isTracking
+  }, [isTracking])
+  
+  useEffect(() => {
+    currentTimeEntryRef.current = currentTimeEntry
+  }, [currentTimeEntry])
+  
+  useEffect(() => {
+    employeeRef.current = employee
+  }, [employee])
 
   useEffect(() => {
     loadInitialData()
@@ -69,21 +87,29 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true)
       setError('')
+      
+      // Reset all timer state first
+      setCurrentTimeEntry(null)
+      setIsTracking(false)
+      setSelectedProject(null)
+      setSelectedTask(null)
 
       // Load projects
       const projectsData = await getProjects()
       setProjects(projectsData)
 
-      // Check for active time entry
-      if (employee) {
+      // Only check for active time entry if employee is properly loaded
+      if (employee && employee.id) {
+        console.log('Loading time entries for employee:', employee.id)
         const timeEntries = await getTimeEntries(employee.id, true)
         const activeEntry = timeEntries.find(entry => entry.is_active)
         
         if (activeEntry) {
+          console.log('Found active time entry:', activeEntry)
           setCurrentTimeEntry(activeEntry)
           setIsTracking(true)
           
-          // Find and set the associated project and task
+          // Find and set the associated project and task for the active entry
           const allTasks = await getTasks()
           const task = allTasks.find(t => t.id === activeEntry.task_id)
           if (task) {
@@ -93,6 +119,8 @@ const Dashboard: React.FC = () => {
               setSelectedProject(project)
             }
           }
+        } else {
+          console.log('No active time entry found')
           
           // Start screenshot schedule if tracking
           await startScreenshotSchedule()
@@ -122,8 +150,23 @@ const Dashboard: React.FC = () => {
   }
 
   const startTracking = async () => {
-    if (!selectedTask || !employee) {
-      setError('Please select a project and task before starting')
+    console.log('Start tracking - selectedTask:', selectedTask)
+    console.log('Start tracking - employee:', employee)
+    console.log('Start tracking - selectedProject:', selectedProject)
+    
+    // More specific validation with better error messages
+    if (!employee) {
+      setError('Authentication error. Please logout and login again.')
+      return
+    }
+    
+    if (!selectedProject) {
+      setError('Please select a project before starting')
+      return
+    }
+    
+    if (!selectedTask) {
+      setError('Please select a task before starting')
       return
     }
 
@@ -153,19 +196,26 @@ const Dashboard: React.FC = () => {
   }
 
   const stopTracking = async () => {
-    if (!currentTimeEntry) return
+    console.log('Stop tracking - currentTimeEntry:', currentTimeEntry)
+    if (!currentTimeEntry) {
+      console.log('Stop tracking - no current time entry, returning')
+      return
+    }
 
     try {
       setError('')
+      console.log('Stop tracking - attempting to stop time entry:', currentTimeEntry.id)
       
       // Stop the time entry
-      const updatedEntry = await stopTimeEntry(currentTimeEntry.id)
+      await stopTimeEntry(currentTimeEntry.id)
+      console.log('Stop tracking - time entry stopped successfully')
       
       setCurrentTimeEntry(null)
       setIsTracking(false)
       
       // Stop screenshot schedule
       await stopScreenshotSchedule()
+      console.log('Stop tracking - screenshot schedule stopped')
 
     } catch (err) {
       console.error('Failed to stop tracking:', err)
@@ -175,8 +225,10 @@ const Dashboard: React.FC = () => {
 
   const startScreenshotSchedule = async () => {
     try {
+      console.log('Starting screenshot schedule with interval:', screenshotInterval, 'minutes')
       await window.api.screenshot.startSchedule(screenshotInterval)
       setIsScreenshotScheduled(true)
+      console.log('Screenshot schedule started successfully')
     } catch (err) {
       console.error('Failed to start screenshot schedule:', err)
     }
@@ -184,30 +236,40 @@ const Dashboard: React.FC = () => {
 
   const stopScreenshotSchedule = async () => {
     try {
+      console.log('Stopping screenshot schedule')
       await window.api.screenshot.stopSchedule()
       setIsScreenshotScheduled(false)
+      console.log('Screenshot schedule stopped successfully')
     } catch (err) {
       console.error('Failed to stop screenshot schedule:', err)
     }
   }
 
   const setupScreenshotListener = () => {
+    console.log('Setting up screenshot listener')
     window.api.screenshot.onTrigger(async () => {
-      if (isTracking && currentTimeEntry && employee) {
+      const currentIsTracking = isTrackingRef.current
+      const currentEntry = currentTimeEntryRef.current
+      const currentEmployee = employeeRef.current
+      
+      console.log('Screenshot trigger received! isTracking:', currentIsTracking, 'currentTimeEntry:', currentEntry, 'employee:', currentEmployee)
+      if (currentIsTracking && currentEntry && currentEmployee) {
+        let screenshotResult: any = null
         try {
+          console.log('Starting screenshot capture process')
           // Capture screenshot
-          const screenshotResult = await window.api.screenshot.capture()
+          screenshotResult = await window.api.screenshot.capture()
+          console.log('Screenshot capture result:', screenshotResult)
           
           if (screenshotResult.success && screenshotResult.data) {
             // Get current network info
             const networkInfo = await window.api.system.getNetworkInfo()
             
-            // Upload screenshot (or queue if offline)
-            const { uploadScreenshot } = useApi()
+            // Upload screenshot
             await uploadScreenshot(
               screenshotResult.data,
-              employee.id,
-              currentTimeEntry.id,
+              currentEmployee.id,
+              currentEntry.id,
               screenshotResult.permission,
               networkInfo.success ? networkInfo.ipAddress : undefined,
               networkInfo.success ? networkInfo.macAddress : undefined
@@ -216,21 +278,25 @@ const Dashboard: React.FC = () => {
         } catch (error) {
           console.error('Failed to handle screenshot capture:', error)
           // Add to offline queue if failed
-          const { addToQueue } = useOfflineQueue()
-          if (screenshotResult.success && screenshotResult.data) {
-            const networkInfo = await window.api.system.getNetworkInfo()
-            await addToQueue({
-              type: 'screenshot_upload',
-              data: {
-                imageData: screenshotResult.data,
-                employeeId: employee.id,
-                timeEntryId: currentTimeEntry.id,
-                permission: screenshotResult.permission,
-                ip: networkInfo.success ? networkInfo.ipAddress : undefined,
-                mac: networkInfo.success ? networkInfo.macAddress : undefined
-              },
-              maxRetries: 3
-            })
+          if (screenshotResult?.success && screenshotResult.data) {
+            try {
+              const networkInfo = await window.api.system.getNetworkInfo()
+              await addToQueue({
+                type: 'screenshot_upload',
+                data: {
+                  imageData: screenshotResult.data,
+                  employeeId: currentEmployee.id,
+                  timeEntryId: currentEntry.id,
+                  permission: screenshotResult.permission,
+                  ip: networkInfo.success ? networkInfo.ipAddress : undefined,
+                  mac: networkInfo.success ? networkInfo.macAddress : undefined
+                },
+                maxRetries: 3
+              })
+              console.log('Screenshot queued for offline upload')
+            } catch (queueError) {
+              console.error('Failed to queue screenshot for upload:', queueError)
+            }
           }
         }
       }
@@ -264,10 +330,9 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="header-actions">
           <StatusIndicator 
-            isOnline={isOnline} 
-            queueSize={queueSize}
-            isTracking={isTracking}
-            onProcessQueue={processQueue}
+            status={isTracking ? 'working' : 'idle'}
+            currentTask={selectedTask?.name}
+            timeElapsed={isTracking ? '00:00:00' : undefined}
           />
           <button 
             className="logout-button"
@@ -294,7 +359,7 @@ const Dashboard: React.FC = () => {
             selectedTask={selectedTask}
             onProjectSelect={setSelectedProject}
             onTaskSelect={setSelectedTask}
-            disabled={isTracking}
+            onProjectChange={loadTasksForProject}
           />
 
           <Timer

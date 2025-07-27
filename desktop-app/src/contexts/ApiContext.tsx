@@ -195,10 +195,15 @@ export const ApiProvider: React.FC<ApiProviderProps> = ({ children }) => {
     if (mac) formData.append('mac', mac)
 
     const headers: Record<string, string> = {}
+    console.log('uploadScreenshot - token available:', !!token, 'token length:', token?.length)
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
+      console.log('uploadScreenshot - added Authorization header')
+    } else {
+      console.error('uploadScreenshot - NO TOKEN AVAILABLE')
     }
 
+    console.log('uploadScreenshot - making request to:', `${API_BASE_URL}/screenshots`)
     const response = await fetch(`${API_BASE_URL}/screenshots`, {
       method: 'POST',
       headers,

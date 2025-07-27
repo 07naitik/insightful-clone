@@ -27,8 +27,7 @@
     "types": ["node"]
   },
   "include": [
-    "src",
-    "electron-main"
+    "src"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

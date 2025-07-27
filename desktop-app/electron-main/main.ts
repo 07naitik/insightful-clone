@@ -6,7 +6,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import { join } from 'path'
 import * as keytar from 'keytar'
-import * as screenshot from 'screenshot-desktop'
+// Removed screenshot-desktop import - using Electron's native desktopCapturer instead
 import * as macaddress from 'macaddress'
 import * as os from 'os'
 import * as fs from 'fs'
@@ -14,6 +14,7 @@ import * as fs from 'fs'
 const isDev = process.env.NODE_ENV === 'development'
 const KEYTAR_SERVICE = 'insightful-time-tracker'
 const KEYTAR_ACCOUNT = 'auth-token'
+const TOKEN_FILE = join(os.homedir(), '.insightful-token')
 
 class MainProcess {
   private mainWindow: BrowserWindow | null = null
@@ -60,24 +61,43 @@ class MainProcess {
   }
 
   setupIPC(): void {
-    // Authentication
+    // Authentication with WSL fallback
     ipcMain.handle('auth:store-token', async (_, token: string) => {
       try {
+        // Try keytar first
         await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT, token)
         return { success: true }
       } catch (error) {
-        console.error('Failed to store token:', error)
-        return { success: false, error: error.message }
+        console.error('Keytar failed, using file fallback:', error)
+        try {
+          // Fallback to file storage for WSL
+          fs.writeFileSync(TOKEN_FILE, token, { mode: 0o600 })
+          return { success: true }
+        } catch (fileError: any) {
+          console.error('File storage also failed:', fileError)
+          return { success: false, error: fileError.message }
+        }
       }
     })
 
     ipcMain.handle('auth:get-token', async () => {
       try {
+        // Try keytar first
         const token = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT)
         return { success: true, token }
       } catch (error) {
-        console.error('Failed to get token:', error)
-        return { success: false, error: error.message }
+        console.error('Keytar failed, using file fallback:', error)
+        try {
+          // Fallback to file storage for WSL
+          if (fs.existsSync(TOKEN_FILE)) {
+            const token = fs.readFileSync(TOKEN_FILE, 'utf8')
+            return { success: true, token }
+          }
+          return { success: false, error: 'No token found' }
+        } catch (fileError: any) {
+          console.error('File storage also failed:', fileError)
+          return { success: false, error: fileError.message }
+        }
       }
     })
 
@@ -133,29 +153,75 @@ class MainProcess {
       }
     })
 
-    // Screenshot Capture
+    // Screenshot Capture using Electron's native desktopCapturer
     ipcMain.handle('screenshot:capture', async () => {
       try {
-        const screenshots = await screenshot.listDisplays()
+        const { desktopCapturer } = await import('electron')
         
-        if (screenshots.length === 0) {
+        console.log('Starting screenshot capture...')
+        
+        // Get available sources (screens and windows) with larger thumbnails
+        const sources = await desktopCapturer.getSources({
+          types: ['screen', 'window'],
+          thumbnailSize: { width: 1920, height: 1080 },
+          fetchWindowIcons: false
+        })
+        
+        console.log('Found', sources.length, 'sources:')
+        sources.forEach((source, index) => {
+          console.log(`Source ${index}:`, source.name, 'id:', source.id)
+        })
+        
+        if (sources.length === 0) {
           throw new Error('No displays found')
         }
 
-        // Capture primary display
-        const buffer = await screenshot({ 
-          screen: screenshots[0].id,
-          format: 'png'
-        })
-
+        // Try to find the best screen source (prefer screen over window)
+        let bestSource = sources.find(source => source.name.includes('Entire screen') || source.name.includes('Screen')) || sources[0]
+        
+        console.log('Using source:', bestSource.name, 'id:', bestSource.id)
+        
+        // Get the thumbnail
+        const thumbnail = bestSource.thumbnail
+        
+        // Check if thumbnail is empty (black)
+        const isEmpty = thumbnail.isEmpty()
+        console.log('Thumbnail empty?', isEmpty, 'size:', thumbnail.getSize())
+        
+        if (isEmpty) {
+          console.log('Thumbnail is empty, trying alternative sources...')
+          // Try other sources if the first one is empty
+          for (let i = 1; i < sources.length; i++) {
+            const altSource = sources[i]
+            console.log('Trying alternative source:', altSource.name)
+            const altThumbnail = altSource.thumbnail
+            if (!altThumbnail.isEmpty()) {
+              bestSource = altSource
+              console.log('Found non-empty source:', bestSource.name)
+              break
+            }
+          }
+        }
+        
+        // Convert to PNG buffer
+        const buffer = bestSource.thumbnail.toPNG()
+        
         // Convert buffer to base64
         const base64 = buffer.toString('base64')
+        
+        console.log('Screenshot captured successfully')
+        console.log('- Source:', bestSource.name)
+        console.log('- Buffer size:', buffer.length, 'bytes')
+        console.log('- Base64 length:', base64.length)
+        console.log('- Thumbnail size:', bestSource.thumbnail.getSize())
         
         return {
           success: true,
           data: base64,
           timestamp: new Date().toISOString(),
-          permission: true // We have permission since we captured it
+          permission: true,
+          source: bestSource.name,
+          size: bestSource.thumbnail.getSize()
         }
       } catch (error) {
         console.error('Failed to capture screenshot:', error)

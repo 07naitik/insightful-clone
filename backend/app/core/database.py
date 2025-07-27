@@ -10,7 +10,7 @@ from typing import AsyncGenerator
 
 from app.core.config import settings
 
-# Create async engine with aggressive pgbouncer compatibility settings
+# Create async engine with complete prepared statement disabling for pgbouncer
 engine = create_async_engine(
     settings.SUPABASE_DB_URL,
     echo=settings.DEBUG,
@@ -19,7 +19,7 @@ engine = create_async_engine(
     pool_reset_on_return="commit",
     pool_size=1,
     max_overflow=0,
-    # Aggressive asyncpg configuration for pgbouncer compatibility
+    # Complete asyncpg configuration to disable all prepared statements
     connect_args={
         "statement_cache_size": 0,
         "prepared_statement_cache_size": 0,
@@ -29,10 +29,11 @@ engine = create_async_engine(
         },
         "command_timeout": 60,
     },
-    # Force execution options to avoid prepared statements
+    # Complete execution options to force unprepared queries
     execution_options={
         "isolation_level": "AUTOCOMMIT",
         "compiled_cache": {},
+        "render_postcompile": True,  # Force parameter rendering
     }
 )
 

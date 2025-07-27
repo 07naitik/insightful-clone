@@ -255,15 +255,32 @@ async def stop_time_entry(
         
         # Stop the time entry
         time_entry.end_time = datetime.utcnow()
+        print(f"Stop endpoint: Setting end_time to {time_entry.end_time}")
         
-        await db.commit()
-        await db.refresh(time_entry)
+        try:
+            await db.commit()
+            print("Stop endpoint: Database commit successful")
+        except Exception as commit_error:
+            print(f"Stop endpoint: Commit failed: {commit_error}")
+            raise
+            
+        try:
+            await db.refresh(time_entry)
+            print("Stop endpoint: Database refresh successful")
+        except Exception as refresh_error:
+            print(f"Stop endpoint: Refresh failed: {refresh_error}")
+            raise
         
+        print(f"Stop endpoint: Returning time_entry with end_time: {time_entry.end_time}")
         return time_entry
         
     except (NotFoundError, ValidationError):
         raise
     except Exception as e:
+        print(f"Stop endpoint error: {str(e)}")
+        print(f"Stop endpoint error type: {type(e)}")
+        import traceback
+        traceback.print_exc()
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

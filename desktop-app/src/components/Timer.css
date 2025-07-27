@@ -1,0 +1,237 @@
+/* Timer.css - Timer component styles */
+.timer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+}
+
+.timer-display {
+  font-size: 64px;
+  font-weight: 700;
+  color: #1f2937;
+  font-family: 'Monaco', 'Consolas', 'SF Mono', monospace;
+  margin: 0 0 16px 0;
+  text-align: center;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.timer-display.active {
+  color: #059669;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+.timer-status {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0 0 24px 0;
+  text-align: center;
+  font-weight: 500;
+}
+
+.timer-status.active {
+  color: #059669;
+  font-weight: 600;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.timer-button {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.timer-button:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.timer-button:hover:before {
+  left: 100%;
+}
+
+.start-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.start-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.start-button:active {
+  transform: translateY(0);
+}
+
+.stop-button {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.stop-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.stop-button:active {
+  transform: translateY(0);
+}
+
+.pause-button {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.pause-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+}
+
+.pause-button:active {
+  transform: translateY(0);
+}
+
+.timer-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.timer-button:disabled:before {
+  display: none;
+}
+
+/* Current task info */
+.current-task {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.current-task-label {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.current-task-name {
+  font-size: 18px;
+  color: #1e293b;
+  margin: 0;
+  font-weight: 600;
+}
+
+.current-project {
+  font-size: 14px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+  font-style: italic;
+}
+
+/* Timer statistics */
+.timer-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.timer-stat {
+  text-align: center;
+  min-width: 80px;
+}
+
+.timer-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.timer-stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .timer-display {
+    font-size: 48px;
+  }
+  
+  .timer-controls {
+    flex-direction: column;
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  .timer-button {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .timer-stats {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .timer-container {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .timer-display {
+    font-size: 36px;
+  }
+  
+  .timer-button {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}

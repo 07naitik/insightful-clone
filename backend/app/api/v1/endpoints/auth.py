@@ -57,9 +57,13 @@ async def login_for_access_token(
     except AuthenticationError:
         raise
     except Exception as e:
+        print(f"Auth endpoint error: {str(e)}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Login failed: {str(e)}"
+            detail=f"Authentication server error: {str(e)}"
         )
 
 

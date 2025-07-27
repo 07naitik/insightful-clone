@@ -52,6 +52,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true)
       
+      // Force clear any stale state first
+      setToken(null)
+      setEmployee(null) 
+      setIsAuthenticated(false)
+      
       // Get token from secure storage
       const tokenResult = await window.api.auth.getToken()
       
@@ -61,6 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Verify token with backend and get employee info
         try {
+          console.log('AuthContext: Checking employee with token:', storedToken)
           const response = await fetch(`${API_BASE_URL}/employees/me`, {
             headers: {
               'Authorization': `Bearer ${storedToken}`,
@@ -68,11 +74,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           })
 
+          console.log('AuthContext: Employee response status:', response.status)
+          
           if (response.ok) {
             const employeeData = await response.json()
+            console.log('AuthContext: Employee data received:', employeeData)
             setEmployee(employeeData)
             setIsAuthenticated(true)
           } else {
+            console.log('AuthContext: Employee fetch failed, removing token')
             // Token is invalid, remove it
             await window.api.auth.removeToken()
             setToken(null)
@@ -114,8 +124,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (storeResult.success) {
           setToken(newToken)
           
-          // Get employee information
-          await refreshEmployeeInfo()
+          // Get employee information (pass token directly to avoid timing issues)
+          await refreshEmployeeInfo(newToken)
           
           setIsAuthenticated(true)
           return { success: true }
@@ -163,33 +173,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Remove token from secure storage
       await window.api.auth.removeToken()
       
-      // Clear state
+      // Clear ALL state completely
       setToken(null)
       setEmployee(null)
       setIsAuthenticated(false)
+      setIsLoading(false)
+      
+      // Force a page reload to clear any remaining state
+      window.location.reload()
     } catch (error) {
       console.error('Logout failed:', error)
-    } finally {
+      // Even if logout fails, clear local state
+      setToken(null)
+      setEmployee(null)
+      setIsAuthenticated(false)
       setIsLoading(false)
     }
   }
 
-  const refreshEmployeeInfo = async () => {
-    if (!token) return
+  const refreshEmployeeInfo = async (authToken?: string) => {
+    const tokenToUse = authToken || token
+    if (!tokenToUse) return
 
+    console.log('AuthContext: Fetching employee info with token:', tokenToUse)
     try {
       const response = await fetch(`${API_BASE_URL}/employees/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${tokenToUse}`,
           'Content-Type': 'application/json'
         }
       })
+      
+      console.log('AuthContext: Employee response status:', response.status)
 
       if (response.ok) {
         const employeeData = await response.json()
+        console.log('AuthContext: Employee data received:', employeeData)
         setEmployee(employeeData)
       } else {
-        console.error('Failed to refresh employee info')
+        console.error('AuthContext: Failed to refresh employee info, status:', response.status)
       }
     } catch (error) {
       console.error('Failed to refresh employee info:', error)

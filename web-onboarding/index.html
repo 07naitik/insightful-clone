@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Employee onboarding portal for Insightful Time Tracker. Activate your account and download the desktop application." />
+    <meta name="keywords" content="time tracking, employee onboarding, productivity, remote work" />
+    <meta name="author" content="Insightful Time Tracker" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Insightful Time Tracker - Employee Onboarding" />
+    <meta property="og:description" content="Activate your employee account and start tracking your time with Insightful Time Tracker." />
+    <meta property="og:image" content="/logo.png" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Insightful Time Tracker - Employee Onboarding" />
+    <meta property="twitter:description" content="Activate your employee account and start tracking your time with Insightful Time Tracker." />
+    <meta property="twitter:image" content="/logo.png" />
+    
+    <title>Insightful Time Tracker - Employee Onboarding</title>
+    
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:8000 https://urbdprfxptfwivjlmxdp.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#667eea" />
+    <meta name="msapplication-navbutton-color" content="#667eea" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Progressive Web App features -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Insightful Onboarding" />
+    
+    <!-- Favicon variations -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/logo.png" />
+    
+    <style>
+      /* Critical CSS - Loading styles */
+      #root {
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      }
+      
+      .loading-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        color: #374151;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      
+      .loading-content {
+        padding: 2rem;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Hide loading fallback when React loads */
+      .app-loaded .loading-fallback {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Loading fallback while React loads -->
+      <div class="loading-fallback">
+        <div class="loading-content">
+          <div class="loading-spinner"></div>
+          <h2>Loading Insightful Time Tracker</h2>
+          <p>Please wait while we prepare your onboarding experience...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- React app entry point -->
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Progressive enhancement script -->
+    <script>
+      // Mark app as loaded when React takes over
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          document.body.classList.add('app-loaded');
+        }, 100);
+      });
+      
+      // Handle service worker registration for PWA features
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          // Service worker would be registered here in production
+          console.log('Service worker support detected');
+        });
+      }
+      
+      // Error handling for failed module loading
+      window.addEventListener('error', function(e) {
+        if (e.message.includes('Failed to fetch')) {
+          const fallback = document.querySelector('.loading-fallback');
+          if (fallback) {
+            fallback.innerHTML = `
+              <div class="loading-content">
+                <h2 style="color: #ef4444;">Failed to Load Application</h2>
+                <p>Please check your internet connection and refresh the page.</p>
+                <button onclick="window.location.reload()" style="
+                  background: #667eea;
+                  color: white;
+                  border: none;
+                  padding: 0.75rem 1.5rem;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 1rem;
+                  font-weight: 600;
+                  margin-top: 1rem;
+                ">Retry</button>
+              </div>
+            `;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

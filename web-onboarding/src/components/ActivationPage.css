@@ -386,7 +386,126 @@
   font-weight: 500;
 }
 
+.support-section .help-text {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+/* Password Form Styles */
+.password-form {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  margin: 2rem 0;
+}
+
+.password-form h3 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+}
+
+.password-form p {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.password-form button {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.password-form button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.password-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.password-requirements {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #e8f4fd;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.password-requirements h4 {
+  margin: 0 0 0.5rem 0;
+  color: #0056b3;
+  font-size: 1rem;
+}
+
+.password-requirements ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.password-requirements li {
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
 /* Responsive design */
+@media (max-width: 768px) {
+  .activation-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .activation-title {
+    font-size: 1.8rem;
+  }
+  
+  .employee-details {
+    padding: 1rem;
+  }
+  
+  .password-form {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+}
+
 @media (max-width: 768px) {
   .activation-page {
     padding: 1rem;

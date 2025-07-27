@@ -11,7 +11,7 @@ const App: React.FC = () => {
       <header className="app-header">
         <div className="container">
           <h1 className="app-title">
-            <img src="/logo.png" alt="Insightful" className="logo" />
+            <span className="logo">⏱️</span>
             Insightful Time Tracker
           </h1>
           <p className="app-subtitle">Employee Onboarding Portal</p>

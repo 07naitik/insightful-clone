@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
 import DownloadSection from './DownloadSection'
+import PasswordActivation from './PasswordActivation'
 import './ActivationPage.css'
 
 interface Employee {
@@ -18,6 +19,9 @@ interface ActivationState {
   success: boolean
   error: string
   employee: Employee | null
+  showPasswordForm: boolean
+  password: string
+  confirmPassword: string
 }
 
 const ActivationPage: React.FC = () => {
@@ -26,7 +30,10 @@ const ActivationPage: React.FC = () => {
     loading: true,
     success: false,
     error: '',
-    employee: null
+    employee: null,
+    showPasswordForm: false,
+    password: '',
+    confirmPassword: ''
   })
 
   // API base URL - configurable via environment variables
@@ -34,25 +41,40 @@ const ActivationPage: React.FC = () => {
 
   useEffect(() => {
     if (token) {
-      activateEmployee(token)
+      // Show password form instead of immediately activating
+      setState({
+        loading: false,
+        success: false,
+        error: '',
+        employee: null,
+        showPasswordForm: true,
+        password: '',
+        confirmPassword: ''
+      })
     } else {
       setState({
         loading: false,
         success: false,
         error: 'Invalid activation link. No token provided.',
-        employee: null
+        employee: null,
+        showPasswordForm: false,
+        password: '',
+        confirmPassword: ''
       })
     }
   }, [token])
 
-  const activateEmployee = async (activationToken: string) => {
+  const activateEmployee = async (activationToken: string, password?: string) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: '' }))
 
       // Call the backend activation endpoint
-      const response = await axios.post(`${API_BASE_URL}/employees/activate`, {
-        token: activationToken
-      }, {
+      const payload: any = { token: activationToken }
+      if (password) {
+        payload.password = password
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/employees/activate`, payload, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -96,6 +118,48 @@ const ActivationPage: React.FC = () => {
     if (token) {
       activateEmployee(token)
     }
+  }
+
+  // Show password form first
+  if (state.showPasswordForm && !state.success && !state.loading) {
+    return (
+      <div className="activation-page">
+        <div className="activation-container">
+          <h1 className="activation-title">🔐 Set Your Password</h1>
+          <p>Before activating your account, please set a secure password:</p>
+          
+          <PasswordActivation 
+            token={token || ''}
+            onSuccess={(employee) => {
+              setState({
+                loading: false,
+                success: true,
+                error: '',
+                employee,
+                showPasswordForm: false,
+                password: '',
+                confirmPassword: ''
+              })
+            }}
+            onError={(error) => {
+              setState(prev => ({ 
+                ...prev, 
+                error, 
+                loading: false 
+              }))
+            }}
+          />
+          
+          {state.error && (
+            <div className="error-section">
+              <div className="error-icon">❌</div>
+              <h2>Activation Failed</h2>
+              <p>{state.error}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   if (state.loading) {

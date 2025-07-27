@@ -153,76 +153,23 @@ class MainProcess {
       }
     })
 
-    // Screenshot Capture using Electron's native desktopCapturer
+    // Screenshot Capture with WSL/Windows fallback
     ipcMain.handle('screenshot:capture', async () => {
       try {
-        const { desktopCapturer } = await import('electron')
-        
         console.log('Starting screenshot capture...')
         
-        // Get available sources (screens and windows) with larger thumbnails
-        const sources = await desktopCapturer.getSources({
-          types: ['screen', 'window'],
-          thumbnailSize: { width: 1920, height: 1080 },
-          fetchWindowIcons: false
-        })
+        // First, try WSL-compatible Windows PowerShell method
+        const isWSL = process.platform === 'linux' && process.env.WSL_DISTRO_NAME
+        console.log('Detected WSL environment:', !!isWSL)
         
-        console.log('Found', sources.length, 'sources:')
-        sources.forEach((source, index) => {
-          console.log(`Source ${index}:`, source.name, 'id:', source.id)
-        })
-        
-        if (sources.length === 0) {
-          throw new Error('No displays found')
-        }
-
-        // Try to find the best screen source (prefer screen over window)
-        let bestSource = sources.find(source => source.name.includes('Entire screen') || source.name.includes('Screen')) || sources[0]
-        
-        console.log('Using source:', bestSource.name, 'id:', bestSource.id)
-        
-        // Get the thumbnail
-        const thumbnail = bestSource.thumbnail
-        
-        // Check if thumbnail is empty (black)
-        const isEmpty = thumbnail.isEmpty()
-        console.log('Thumbnail empty?', isEmpty, 'size:', thumbnail.getSize())
-        
-        if (isEmpty) {
-          console.log('Thumbnail is empty, trying alternative sources...')
-          // Try other sources if the first one is empty
-          for (let i = 1; i < sources.length; i++) {
-            const altSource = sources[i]
-            console.log('Trying alternative source:', altSource.name)
-            const altThumbnail = altSource.thumbnail
-            if (!altThumbnail.isEmpty()) {
-              bestSource = altSource
-              console.log('Found non-empty source:', bestSource.name)
-              break
-            }
-          }
+        // For WSL: Use Windows PowerShell to take screenshot
+        if (isWSL) {
+          return await captureScreenshotWithPowerShell()
         }
         
-        // Convert to PNG buffer
-        const buffer = bestSource.thumbnail.toPNG()
+        // For non-WSL: Use standard Electron desktopCapturer
+        return await captureScreenshotWithElectron()
         
-        // Convert buffer to base64
-        const base64 = buffer.toString('base64')
-        
-        console.log('Screenshot captured successfully')
-        console.log('- Source:', bestSource.name)
-        console.log('- Buffer size:', buffer.length, 'bytes')
-        console.log('- Base64 length:', base64.length)
-        console.log('- Thumbnail size:', bestSource.thumbnail.getSize())
-        
-        return {
-          success: true,
-          data: base64,
-          timestamp: new Date().toISOString(),
-          permission: true,
-          source: bestSource.name,
-          size: bestSource.thumbnail.getSize()
-        }
       } catch (error) {
         console.error('Failed to capture screenshot:', error)
         return {
@@ -232,6 +179,158 @@ class MainProcess {
         }
       }
     })
+    
+    // WSL-compatible Windows PowerShell screenshot function
+    async function captureScreenshotWithPowerShell(): Promise<any> {
+      const { exec } = require('child_process')
+      const { promisify } = require('util')
+      const execAsync = promisify(exec)
+      
+      try {
+        console.log('Using Windows PowerShell screenshot method for WSL')
+        
+        // Create temporary paths
+        const timestamp = Date.now()
+        const tempPath = `/tmp/screenshot_${timestamp}.png`
+        const scriptPath = `/tmp/screenshot_${timestamp}.ps1`
+        const windowsImagePath = `C:\\temp\\screenshot_${timestamp}.png`
+        const windowsScriptPath = `C:\\temp\\screenshot_${timestamp}.ps1`
+        
+        // Ensure temp directories exist
+        await execAsync('mkdir -p /tmp')
+        await execAsync('powershell.exe -Command "New-Item -ItemType Directory -Force -Path C:\\temp"')
+        
+        // Create PowerShell script content
+        const psScriptContent = `Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+\$bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+\$bitmap = New-Object System.Drawing.Bitmap \$bounds.Width, \$bounds.Height
+\$graphics = [System.Drawing.Graphics]::FromImage(\$bitmap)
+\$graphics.CopyFromScreen(\$bounds.Location, [System.Drawing.Point]::Empty, \$bounds.Size)
+\$bitmap.Save('${windowsImagePath}', [System.Drawing.Imaging.ImageFormat]::Png)
+\$graphics.Dispose()
+\$bitmap.Dispose()
+Write-Host "Screenshot saved to ${windowsImagePath}"`
+        
+        // Write PowerShell script file
+        console.log('Creating PowerShell script file...')
+        require('fs').writeFileSync(scriptPath, psScriptContent, 'utf8')
+        
+        // Copy script to Windows temp directory
+        await execAsync(`cp "${scriptPath}" "/mnt/c/temp/screenshot_${timestamp}.ps1"`)
+        
+        // Execute PowerShell script file
+        console.log('Executing PowerShell script file...')
+        console.log('Script path:', windowsScriptPath)
+        const result = await execAsync(`powershell.exe -ExecutionPolicy Bypass -File "${windowsScriptPath}"`)
+        console.log('PowerShell output:', result.stdout)
+        
+        // Copy screenshot back to WSL temp directory
+        console.log('Copying screenshot back to WSL...')
+        await execAsync(`cp "/mnt/c/temp/screenshot_${timestamp}.png" "${tempPath}"`)
+        
+        // Read the captured image
+        console.log('Reading captured screenshot file...')
+        const imageBuffer = require('fs').readFileSync(tempPath)
+        const base64 = imageBuffer.toString('base64')
+        
+        // Clean up temp files
+        require('fs').unlinkSync(tempPath)
+        require('fs').unlinkSync(scriptPath)
+        await execAsync(`powershell.exe -Command "Remove-Item '${windowsImagePath}' -Force -ErrorAction SilentlyContinue"`)
+        await execAsync(`powershell.exe -Command "Remove-Item '${windowsScriptPath}' -Force -ErrorAction SilentlyContinue"`)
+        
+        console.log('Screenshot captured successfully with PowerShell')
+        console.log('- Buffer size:', imageBuffer.length, 'bytes')
+        console.log('- Base64 length:', base64.length)
+        
+        return {
+          success: true,
+          data: base64,
+          timestamp: new Date().toISOString(),
+          permission: true,
+          source: 'Windows PowerShell (WSL)',
+          method: 'powershell'
+        }
+        
+      } catch (error) {
+        console.error('PowerShell screenshot failed:', error)
+        console.log('Falling back to Electron desktopCapturer...')
+        return await captureScreenshotWithElectron()
+      }
+    }
+    
+    // Standard Electron desktopCapturer function
+    async function captureScreenshotWithElectron(): Promise<any> {
+      const { desktopCapturer } = await import('electron')
+      
+      console.log('Using Electron desktopCapturer method')
+      
+      // Get available sources (screens and windows) with larger thumbnails
+      const sources = await desktopCapturer.getSources({
+        types: ['screen', 'window'],
+        thumbnailSize: { width: 1920, height: 1080 },
+        fetchWindowIcons: false
+      })
+      
+      console.log('Found', sources.length, 'sources:')
+      sources.forEach((source, index) => {
+        console.log(`Source ${index}:`, source.name, 'id:', source.id)
+      })
+      
+      if (sources.length === 0) {
+        throw new Error('No displays found')
+      }
+
+      // Try to find the best screen source (prefer screen over window)
+      let bestSource = sources.find(source => source.name.includes('Entire screen') || source.name.includes('Screen')) || sources[0]
+      
+      console.log('Using source:', bestSource.name, 'id:', bestSource.id)
+      
+      // Get the thumbnail
+      const thumbnail = bestSource.thumbnail
+      
+      // Check if thumbnail is empty (black)
+      const isEmpty = thumbnail.isEmpty()
+      console.log('Thumbnail empty?', isEmpty, 'size:', thumbnail.getSize())
+      
+      if (isEmpty) {
+        console.log('Thumbnail is empty, trying alternative sources...')
+        // Try other sources if the first one is empty
+        for (let i = 1; i < sources.length; i++) {
+          const altSource = sources[i]
+          console.log('Trying alternative source:', altSource.name)
+          const altThumbnail = altSource.thumbnail
+          if (!altThumbnail.isEmpty()) {
+            bestSource = altSource
+            console.log('Found non-empty source:', bestSource.name)
+            break
+          }
+        }
+      }
+      
+      // Convert to PNG buffer
+      const buffer = bestSource.thumbnail.toPNG()
+      
+      // Convert buffer to base64
+      const base64 = buffer.toString('base64')
+      
+      console.log('Screenshot captured successfully with Electron')
+      console.log('- Source:', bestSource.name)
+      console.log('- Buffer size:', buffer.length, 'bytes')
+      console.log('- Base64 length:', base64.length)
+      console.log('- Thumbnail size:', bestSource.thumbnail.getSize())
+      
+      return {
+        success: true,
+        data: base64,
+        timestamp: new Date().toISOString(),
+        permission: true,
+        source: bestSource.name,
+        size: bestSource.thumbnail.getSize(),
+        method: 'electron'
+      }
+    }
 
     // Screenshot Scheduling
     ipcMain.handle('screenshot:start-schedule', async (_, intervalMinutes: number = 5) => {

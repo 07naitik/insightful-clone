@@ -28,6 +28,7 @@ class EmployeeUpdate(BaseModel):
 class EmployeeActivate(BaseModel):
     """Schema for employee activation"""
     token: str = Field(..., min_length=1)
+    password: Optional[str] = Field(None, min_length=8, description="Password to set for the account (optional for existing users)")
 
 
 class EmployeeResponse(EmployeeBase):

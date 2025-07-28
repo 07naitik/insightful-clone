@@ -130,6 +130,7 @@ async def get_task(
 
 
 @router.patch("/{task_id}", response_model=TaskResponse)
+@router.put("/{task_id}", response_model=TaskResponse)  # Insightful-compatible alias
 async def update_task(
     task_id: int,
     task_data: TaskUpdate,

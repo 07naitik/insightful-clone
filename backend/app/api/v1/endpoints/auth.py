@@ -10,8 +10,9 @@ from datetime import timedelta
 from app.core.database import get_db_session
 from app.core.auth import auth_manager, get_current_employee
 from app.models.employee import Employee
-from app.schemas.auth import Token
 from app.core.exceptions import AuthenticationError
+from app.core.security import password_manager
+from app.schemas.auth import Token
 
 router = APIRouter()
 
@@ -19,12 +20,11 @@ router = APIRouter()
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     email: str = Form(...),
-    password: str = Form(...),  # For demo purposes - in production use proper password auth
+    password: str = Form(...),
     db: AsyncSession = Depends(get_db_session)
 ):
     """
-    OAuth2 compatible token login endpoint
-    For demo purposes, we'll authenticate by email only (assuming employee exists and is activated)
+    OAuth2 compatible token login endpoint with proper password authentication
     """
     try:
         # Get employee by email
@@ -39,6 +39,13 @@ async def login_for_access_token(
         
         if not employee:
             raise AuthenticationError("Invalid credentials or account not activated")
+        
+        # Verify password
+        if not employee.password_hash:
+            raise AuthenticationError("Account password not set. Please complete activation.")
+        
+        if not password_manager.verify_password(password, employee.password_hash):
+            raise AuthenticationError("Invalid credentials")
         
         # Create access token
         access_token_expires = timedelta(hours=24)

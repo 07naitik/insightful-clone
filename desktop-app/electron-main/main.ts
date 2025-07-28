@@ -55,8 +55,13 @@ class MainProcess {
       await this.mainWindow.loadFile(join(__dirname, '../dist/index.html'))
     }
 
-    // Show window when ready
+    // Show window immediately (don't wait for ready-to-show)
+    this.mainWindow.show()
+    console.log('✅ Window should now be visible')
+    
+    // Also handle ready-to-show as backup
     this.mainWindow.once('ready-to-show', () => {
+      console.log('✅ Ready-to-show event fired')
       this.mainWindow?.show()
     })
 
@@ -70,42 +75,39 @@ class MainProcess {
   }
 
   setupIPC(): void {
-    // Authentication with WSL fallback
+    // Token Management with WSL-compatible fallback
     ipcMain.handle('auth:store-token', async (_, token: string) => {
       try {
-        // Try keytar first
         await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT, token)
         return { success: true }
-      } catch (error) {
-        console.error('Keytar failed, using file fallback:', error)
+      } catch (error: any) {
+        // Silent fallback to file storage for WSL compatibility (no console.error)
         try {
-          // Fallback to file storage for WSL
-          fs.writeFileSync(TOKEN_FILE, token, { mode: 0o600 })
+          fs.writeFileSync(TOKEN_FILE, token, 'utf8')
           return { success: true }
         } catch (fileError: any) {
-          console.error('File storage also failed:', fileError)
-          return { success: false, error: fileError.message }
+          return { success: false, error: 'Failed to store token securely' }
         }
       }
     })
 
     ipcMain.handle('auth:get-token', async () => {
       try {
-        // Try keytar first
         const token = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT)
-        return { success: true, token }
-      } catch (error) {
-        console.error('Keytar failed, using file fallback:', error)
+        if (token) {
+          return { success: true, token }
+        }
+        return { success: false, error: 'No token found' }
+      } catch (error: any) {
+        // Silent fallback to file storage for WSL compatibility
         try {
-          // Fallback to file storage for WSL
           if (fs.existsSync(TOKEN_FILE)) {
             const token = fs.readFileSync(TOKEN_FILE, 'utf8')
             return { success: true, token }
           }
           return { success: false, error: 'No token found' }
         } catch (fileError: any) {
-          console.error('File storage also failed:', fileError)
-          return { success: false, error: fileError.message }
+          return { success: false, error: 'Failed to retrieve token' }
         }
       }
     })
@@ -114,9 +116,16 @@ class MainProcess {
       try {
         await keytar.deletePassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT)
         return { success: true }
-      } catch (error) {
-        console.error('Failed to remove token:', error)
-        return { success: false, error: error.message }
+      } catch (error: any) {
+        // Silent fallback for WSL - try to remove file
+        try {
+          if (fs.existsSync(TOKEN_FILE)) {
+            fs.unlinkSync(TOKEN_FILE)
+          }
+          return { success: true }
+        } catch (fileError: any) {
+          return { success: false, error: 'Failed to remove token' }
+        }
       }
     })
 

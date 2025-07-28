@@ -2,14 +2,15 @@
 Time Entry management endpoints matching Insightful's Time Tracking API
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from typing import List
 from datetime import datetime
 
 from app.core.database import get_db_session
-from app.core.auth import get_current_employee, get_active_employee
+from app.core.auth import get_active_employee
+from app.core.network_utils import detect_client_network_info
 from app.models.employee import Employee
 from app.models.task import Task
 from app.models.time_entry import TimeEntry
@@ -22,6 +23,7 @@ router = APIRouter()
 @router.post("/", response_model=TimeEntryResponse, status_code=status.HTTP_201_CREATED)
 async def create_time_entry(
     time_entry_data: TimeEntryCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db_session),
     current_user: Employee = Depends(get_active_employee)
 ):
@@ -53,13 +55,20 @@ async def create_time_entry(
         if active_entry:
             raise ConflictError("Employee already has an active time entry. Please clock out first.")
         
-        # Create new time entry
+        # Auto-detect IP and MAC if not provided by client
+        detected_ip, detected_mac = detect_client_network_info(request)
+        
+        # Use client-provided values if available, otherwise use auto-detected values
+        final_ip = time_entry_data.ip_address or detected_ip
+        final_mac = time_entry_data.mac_address or detected_mac
+        
+        # Create new time entry with production-ready network info
         time_entry = TimeEntry(
             employee_id=current_user.id,
             task_id=time_entry_data.task_id,
             start_time=datetime.utcnow(),
-            ip_address=time_entry_data.ip_address,
-            mac_address=time_entry_data.mac_address
+            ip_address=final_ip,
+            mac_address=final_mac
         )
         
         db.add(time_entry)
@@ -199,7 +208,7 @@ async def update_time_entry(
 async def delete_time_entry(
     time_entry_id: int,
     db: AsyncSession = Depends(get_db_session),
-    current_user: Employee = Depends(get_current_employee)
+    current_user: Employee = Depends(get_active_employee)
 ):
     """
     Delete time entry

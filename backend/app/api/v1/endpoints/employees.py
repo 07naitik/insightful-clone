@@ -14,6 +14,7 @@ from app.core.auth import get_current_employee, get_active_employee
 from app.models.employee import Employee
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeResponse, EmployeeActivate
 from app.core.exceptions import NotFoundError, ConflictError, ValidationError
+from app.core.security import password_manager
 
 router = APIRouter()
 
@@ -131,6 +132,7 @@ async def get_employee(
 
 
 @router.patch("/{employee_id}", response_model=EmployeeResponse)
+@router.put("/{employee_id}", response_model=EmployeeResponse)  # Insightful-compatible alias
 async def update_employee(
     employee_id: int,
     employee_data: EmployeeUpdate,
@@ -232,6 +234,16 @@ async def activate_employee(
         
         if not employee:
             raise ValidationError("Invalid or already used activation token")
+        
+        # Set password if provided
+        if activation_data.password:
+            # Validate password strength
+            is_valid, error_msg = password_manager.is_password_strong(activation_data.password)
+            if not is_valid:
+                raise ValidationError(f"Password validation failed: {error_msg}")
+            
+            # Hash and store password
+            employee.password_hash = password_manager.hash_password(activation_data.password)
         
         # Activate the employee
         employee.is_activated = True

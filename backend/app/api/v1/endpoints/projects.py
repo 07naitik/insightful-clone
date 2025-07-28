@@ -112,6 +112,7 @@ async def get_project(
 
 
 @router.patch("/{project_id}", response_model=ProjectResponse)
+@router.put("/{project_id}", response_model=ProjectResponse)  # Insightful-compatible alias
 async def update_project(
     project_id: int,
     project_data: ProjectUpdate,
